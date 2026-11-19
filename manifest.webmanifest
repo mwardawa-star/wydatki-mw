@@ -1,7 +1,7 @@
 {
   "name": "Wydatki MW",
   "short_name": "Wydatki MW",
-  "start_url": "./?v=m",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0F1412",
