@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wojtek">
+<meta name="theme-color" content="#111315">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Wojtek</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#111315; --panel:#1A1D20; --line:#2A2E33; --text:#E8EAED; --muted:#8C939B;
+  --accent:#4C9AFF; --done:#3FB37F; --fv:#F59E0B; --danger:#EF5350;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.wrap{max-width:640px;margin:0 auto;padding:0 0 calc(90px + env(safe-area-inset-bottom))}
+
+/* nagłówek */
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:10px}
+h1{margin:0;font-size:24px;font-weight:800;flex:1}
+.count{color:var(--muted);font-size:13px;margin-top:2px}
+.iconbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:active{background:var(--panel)}
+.iconbtn.spin svg{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.search{position:relative;margin-top:10px}
+.search input{width:100%;font-size:17px;padding:11px 40px 11px 38px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);outline:none;-webkit-appearance:none}
+.search input:focus{border-color:var(--accent)}
+.search input::-webkit-search-cancel-button,.search input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.search .mag{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:15px;color:var(--muted);display:none}
+.search.has .clr{display:grid;place-items:center}
+.chips{display:flex;gap:8px;margin-top:10px}
+.chip{font-size:13px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+.chip.on{border-color:var(--fv);color:var(--fv);background:rgba(245,158,11,.1)}
+
+/* lista */
+.sect{padding:16px 16px 6px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.row{display:flex;align-items:center;gap:12px;padding:0 10px 0 14px;min-height:52px;border-bottom:1px solid var(--line);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.row.flash{animation:fl 1.4s ease-out}
+@keyframes fl{0%{background:rgba(76,154,255,.28)}100%{background:transparent}}
+.chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid #5A616A;display:grid;place-items:center}
+.chk svg{opacity:0}
+.row:not(.done) .chk:hover{border-color:var(--done)}
+.row:not(.done) .chk:hover svg{opacity:.5}
+.row.done .chk{background:var(--done);border-color:var(--done)}
+.row.done .chk svg{opacity:1}
+.name{flex:1;padding:14px 0;line-height:1.3;word-break:break-word;cursor:default}
+.row.done .name{color:var(--muted);text-decoration:line-through;cursor:pointer}
+.fv{flex:none;font-size:12px;font-weight:700;padding:6px 8px;border-radius:8px;border:1px solid var(--line);color:#4A5058;white-space:nowrap}
+.fv.on{color:#1A1200;background:var(--fv);border-color:var(--fv)}
+.row.done .fv.on{opacity:.6}
+.addrow{display:flex;align-items:center;gap:12px;padding:14px;margin:10px 12px 0;border-radius:12px;background:rgba(76,154,255,.12);color:var(--accent);font-weight:600;width:calc(100% - 24px);text-align:left}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);line-height:1.5}
+.more{display:block;margin:18px auto 0;font-size:14px;color:var(--accent);padding:10px 16px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(150%);background:#2B3036;color:var(--text);padding:12px 14px 12px 16px;border-radius:14px;display:flex;gap:14px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:transform .25s;max-width:calc(100% - 24px);z-index:20;font-size:15px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast button{color:var(--accent);font-weight:700;flex:none}
+.toast.err{background:#4A1F1F}
+
+/* okno edycji */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:30}
+.modal.show{display:flex}
+@media (min-width:700px){.modal{align-items:center}}
+.sheet{background:var(--panel);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+@media (min-width:700px){.sheet{border-radius:18px}}
+.sheet h2{margin:0 0 12px;font-size:18px}
+.sheet input{width:100%;font-size:17px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);outline:none}
+.sheet input:focus{border-color:var(--accent)}
+.btns{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;padding:13px;border-radius:12px;font-weight:700;background:#2B3036}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.del{background:none;color:var(--danger);border:1px solid rgba(239,83,80,.4)}
+.btn.del.sure{background:var(--danger);color:#fff}
+
+/* ekran startowy */
+.setup{max-width:420px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top)) 22px 40px;text-align:center}
+.setup .logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#4C9AFF,#1E5BB8);display:grid;place-items:center;color:#fff;font-weight:800;font-size:28px;margin:0 auto 18px}
+.setup p{color:var(--muted);font-size:15px;line-height:1.5}
+.setup input{width:100%;font-size:17px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);margin-top:8px}
+.setup .btn{width:100%;margin-top:12px}
+.setup .e{color:var(--danger);margin-top:12px;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"><span class="t" id="toastT"></span><button id="toastB">Cofnij</button></div>
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2>Edytuj pozycję</h2>
+    <input id="editIn" autocomplete="off">
+    <div class="btns">
+      <button class="btn del" id="delB">Usuń</button>
+      <button class="btn" id="cancelB">Anuluj</button>
+      <button class="btn pri" id="saveB">Zapisz</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+'use strict';
+
+/* ===== ustawienia ===== */
+const API = 'WKLEJ_TUTAJ_ADRES_API';
+const KEY_NAME = 'wojtek_key';
+const CACHE_NAME = 'wojtek_cache';
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+};
+
+/* ===== pomocnicze ===== */
+const coll = new Intl.Collator('pl', { sensitivity: 'base', numeric: true });
+const norm = s => s.toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = id => document.getElementById(id);
+
+const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_MAG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+const ICON_X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_SYNC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/></svg>';
+
+/* ===== stan ===== */
+let items = [];
+let query = '';
+let onlyFv = false;
+let showDone = false;
+let flashId = null;
+let tempId = -1;
+
+/* ===== komunikacja z arkuszem ===== */
+async function apiGet() {
+  const r = await fetch(API + '?k=' + encodeURIComponent(store.get(KEY_NAME) || '') + '&t=' + Date.now());
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Błąd serwera');
+  return j;
+}
+async function apiPost(body) {
+  body.k = store.get(KEY_NAME);
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Błąd serwera');
+  return j;
+}
+
+/* zapisy idą po kolei, żeby nic się nie pomieszało */
+let queue = Promise.resolve();
+let pending = 0;
+function enqueue(fn) {
+  pending++;
+  queue = queue.then(fn).catch(e => {
+    showToast('Nie zapisano: ' + e.message + '. Odświeżam listę…', null, true);
+    setTimeout(load, 1500);
+  }).finally(() => { pending--; });
+}
+function saveCache() { store.set(CACHE_NAME, JSON.stringify(items)); }
+
+async function load() {
+  const b = $('syncB');
+  if (b) b.classList.add('spin');
+  try {
+    await queue;
+    const j = await apiGet();
+    if (pending === 0) { items = j.items; saveCache(); render(); }
+  } catch (e) {
+    if (/klucz/i.test(e.message)) { store.set(KEY_NAME, null); store.set(CACHE_NAME, null); askKey('Nieprawidłowy klucz – spróbuj jeszcze raz.'); return; }
+    showToast('Brak połączenia – pokazuję zapisaną listę', null, true);
+  } finally {
+    const b2 = $('syncB');
+    if (b2) b2.classList.remove('spin');
+  }
+}
+
+/* ===== akcje ===== */
+function setDone(it, val) {
+  it.d = val;
+  saveCache();
+  enqueue(() => apiPost({ a: 'set', id: it.id, d: val }));
+}
+function complete(it) {
+  setDone(it, true);
+  render();
+  showToast('Wykonane: ' + it.n, () => { setDone(it, false); flashId = it.id; render(); });
+}
+function restore(it) {
+  setDone(it, false);
+  flashId = it.id;
+  render();
+  showToast('Przywrócone: ' + it.n, () => { setDone(it, true); render(); });
+}
+function toggleFv(it) {
+  it.f = !it.f;
+  saveCache();
+  render();
+  enqueue(() => apiPost({ a: 'set', id: it.id, f: it.f }));
+}
+function addItem(name) {
+  name = name.replace(/\s+/g, ' ').trim();
+  if (!name) return;
+  const it = { id: tempId--, n: name, d: false, f: false };
+  items.push(it);
+  flashId = it.id;
+  query = '';
+  saveCache();
+  render();
+  enqueue(async () => {
+    const j = await apiPost({ a: 'add', n: name });
+    if (flashId === it.id) flashId = j.item.id;
+    it.id = j.item.id;
+    saveCache();
+    render();
+  });
+  showToast('Dodano: ' + name, null);
+}
+function renameItem(it, name) {
+  name = name.replace(/\s+/g, ' ').trim();
+  if (!name || name === it.n) return;
+  it.n = name;
+  saveCache();
+  render();
+  enqueue(() => apiPost({ a: 'rename', id: it.id, n: name }));
+}
+function deleteItem(it) {
+  items = items.filter(x => x !== it);
+  saveCache();
+  render();
+  enqueue(() => apiPost({ a: 'delete', id: it.id }));
+  showToast('Usunięto: ' + it.n, null);
+}
+
+/* ===== toast z „Cofnij” ===== */
+let toastTimer = null, toastUndo = null;
+function showToast(text, undo, isErr) {
+  $('toastT').textContent = text;
+  toastUndo = undo;
+  $('toastB').style.display = undo ? '' : 'none';
+  $('toast').classList.toggle('err', !!isErr);
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, undo ? 5000 : 2500);
+}
+function hideToast() { $('toast').classList.remove('show'); toastUndo = null; }
+$('toastB').onclick = () => { const u = toastUndo; hideToast(); if (u) u(); };
+
+/* ===== edycja ===== */
+let editing = null;
+function openEdit(it) {
+  editing = it;
+  $('editIn').value = it.n;
+  $('delB').textContent = 'Usuń';
+  $('delB').classList.remove('sure');
+  $('modal').classList.add('show');
+  setTimeout(() => $('editIn').focus(), 50);
+}
+function closeEdit() { $('modal').classList.remove('show'); editing = null; }
+$('cancelB').onclick = closeEdit;
+$('modal').onclick = e => { if (e.target.id === 'modal') closeEdit(); };
+$('saveB').onclick = () => { if (editing) renameItem(editing, $('editIn').value); closeEdit(); };
+$('editIn').onkeydown = e => { if (e.key === 'Enter') $('saveB').click(); if (e.key === 'Escape') closeEdit(); };
+$('delB').onclick = () => {
+  const b = $('delB');
+  if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'Na pewno?'; return; }
+  const it = editing; closeEdit(); if (it) deleteItem(it);
+};
+
+/* ===== widok ===== */
+function rowHtml(it) {
+  return '<div class="row' + (it.d ? ' done' : '') + (it.id === flashId ? ' flash' : '') + '" data-id="' + it.id + '">' +
+    '<button class="chk" data-act="chk" aria-label="' + (it.d ? 'Przywróć' : 'Wykonane') + '">' + ICON_CHECK + '</button>' +
+    '<div class="name" data-act="name">' + esc(it.n) + '</div>' +
+    '<button class="fv' + (it.f ? ' on' : '') + '" data-act="fv" title="Bez faktury">bez FV</button>' +
+    '</div>';
+}
+
+function buildShell() {
+  $('app').innerHTML =
+    '<div class="wrap">' +
+    '<header>' +
+      '<div class="top"><div style="flex:1"><h1>Wojtek</h1><div class="count" id="count"></div></div>' +
+      '<button class="iconbtn" id="syncB" title="Odśwież">' + ICON_SYNC + '</button></div>' +
+      '<div class="search" id="sbox"><span class="mag">' + ICON_MAG + '</span>' +
+        '<input id="q" type="search" placeholder="Szukaj lub dodaj…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">' +
+        '<button class="clr" id="clr" aria-label="Wyczyść">' + ICON_X + '</button></div>' +
+      '<div class="chips"><button class="chip" id="fvChip">Tylko bez FV</button></div>' +
+    '</header>' +
+    '<main id="list"></main>' +
+    '</div>';
+
+  const q = $('q');
+  q.oninput = () => { query = q.value; render(); };
+  q.onkeydown = e => {
+    if (e.key === 'Enter') {
+      const add = document.querySelector('.addrow');
+      if (add) { addItem(query); q.value = ''; q.blur(); }
+    }
+    if (e.key === 'Escape') { query = ''; q.value = ''; render(); }
+  };
+  $('clr').onclick = () => { query = ''; q.value = ''; render(); q.focus(); };
+  $('syncB').onclick = load;
+  $('fvChip').onclick = () => { onlyFv = !onlyFv; render(); };
+
+  const list = $('list');
+  list.addEventListener('click', e => {
+    if (longPressed) { longPressed = false; return; }
+    const addBtn = e.target.closest('.addrow');
+    if (addBtn) { addItem(query); $('q').value = ''; return; }
+    if (e.target.closest('#moreB')) { showDone = !showDone; render(); return; }
+    const row = e.target.closest('.row');
+    if (!row) return;
+    const it = items.find(x => String(x.id) === row.dataset.id);
+    if (!it) return;
+    const act = e.target.closest('[data-act]');
+    const a = act ? act.dataset.act : 'name';
+    if (a === 'fv') return toggleFv(it);
+    if (it.d) return restore(it);           // klik w ukończone = wraca na górę
+    if (a === 'chk') return complete(it);
+  });
+  /* edycja: dwuklik lub prawy przycisk na laptopie, przytrzymanie na iPhonie */
+  list.addEventListener('dblclick', e => { const it = itemFrom(e.target); if (it && !it.d) openEdit(it); });
+  list.addEventListener('contextmenu', e => { const it = itemFrom(e.target); if (it) { e.preventDefault(); openEdit(it); } });
+  let lpTimer = null, longPressed = false;
+  list.addEventListener('touchstart', e => {
+    const it = itemFrom(e.target);
+    if (!it || e.target.closest('[data-act="fv"]')) return;
+    longPressed = false;
+    lpTimer = setTimeout(() => { longPressed = true; if (navigator.vibrate) navigator.vibrate(15); openEdit(it); }, 550);
+  }, { passive: true });
+  ['touchend', 'touchmove', 'touchcancel'].forEach(ev => list.addEventListener(ev, () => clearTimeout(lpTimer), { passive: true }));
+}
+function itemFrom(el) {
+  const row = el.closest && el.closest('.row');
+  return row ? items.find(x => String(x.id) === row.dataset.id) : null;
+}
+
+function render() {
+  if (!$('list')) return;
+  const nq = norm(query);
+  $('sbox').classList.toggle('has', query.length > 0);
+  $('fvChip').classList.toggle('on', onlyFv);
+
+  const match = it => (!onlyFv || it.f) && (!nq || norm(it.n).includes(nq));
+  const byName = (a, b) => coll.compare(a.n, b.n);
+  const active = items.filter(it => !it.d && match(it)).sort(byName);
+  const done = items.filter(it => it.d && match(it)).sort(byName);
+
+  const nActive = items.filter(it => !it.d).length;
+  const nDone = items.length - nActive;
+  $('count').textContent = nActive + ' do kupienia · ' + nDone + ' ukończonych';
+
+  let h = '';
+  const exact = nq && items.some(it => norm(it.n) === nq);
+  if (nq && !exact) {
+    h += '<button class="addrow"><span style="font-size:22px;line-height:1">+</span><span>Dodaj „' + esc(query.trim()) + '”</span></button>';
+  }
+
+  if (active.length) {
+    if (nq) h += '<div class="sect">Do kupienia</div>';
+    h += active.map(rowHtml).join('');
+  } else if (!nq) {
+    h += '<div class="empty">' + (onlyFv ? 'Brak aktywnych pozycji „bez FV”.' : 'Wszystko kupione 🎉<br>Wpisz nazwę w polu powyżej, żeby dodać nową pozycję.') + '</div>';
+  }
+
+  if (nq || showDone) {
+    if (done.length) {
+      h += '<div class="sect">Ukończone · kliknij, żeby przywrócić</div>';
+      h += done.map(rowHtml).join('');
+    }
+  }
+  if (nq && !active.length && !done.length) h += '<div class="empty">Nic nie znaleziono.</div>';
+  if (!nq && nDone) h += '<button class="more" id="moreB">' + (showDone ? 'Ukryj ukończone' : 'Pokaż ukończone (' + nDone + ')') + '</button>';
+
+  $('list').innerHTML = h;
+
+  if (flashId !== null) {
+    const el = document.querySelector('.row.flash');
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.top < 140 || r.bottom > window.innerHeight) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    flashId = null;
+  }
+}
+
+/* ===== start ===== */
+function askKey(msg) {
+  $('app').innerHTML = '<div class="setup"><div class="logo">W</div><b>Wojtek</b>' +
+    '<p>Wklej klucz dostępu (jednorazowo na tym urządzeniu).</p>' +
+    '<input id="k" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="klucz">' +
+    '<button class="btn pri" id="kb">Otwórz listę</button>' + (msg ? '<div class="e">' + msg + '</div>' : '') + '</div>';
+  $('kb').onclick = () => { const v = $('k').value.trim(); if (v) { store.set(KEY_NAME, v); start(); } };
+  $('k').onkeydown = e => { if (e.key === 'Enter') $('kb').click(); };
+}
+
+function start() {
+  /* klucz można też podać raz w linku: …/wojtek/#k=KLUCZ */
+  const m = location.hash.match(/k=([^&]+)/);
+  if (m) { store.set(KEY_NAME, decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname); }
+  if (API.indexOf('http') !== 0) { $('app').innerHTML = '<div class="setup"><div class="logo">W</div><b>Wojtek</b><p>Aplikacja nie jest jeszcze połączona z arkuszem.</p></div>'; return; }
+  if (!store.get(KEY_NAME)) return askKey();
+  try { items = JSON.parse(store.get(CACHE_NAME) || '[]'); } catch (e) { items = []; }
+  buildShell();
+  render();
+  load();
+}
+
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('list') && pending === 0) load(); });
+start();
+})();
+</script>
+</body>
+</html>
